@@ -1,8 +1,22 @@
-# Ollama RAG Chat
+![HTML](https://img.shields.io/badge/HTML5-Markup-orange.svg)
+![TailwindCSS](https://img.shields.io/badge/TailwindCSS-Utility--First-blue.svg)
+![JavaScript](https://img.shields.io/badge/JavaScript-ES6+-yellow.svg)
+![Marked.js](https://img.shields.io/badge/Marked.js-Markdown%20Parser-lightgrey.svg)
+![Node.js](https://img.shields.io/badge/Node.js-Runtime-green.svg)
+![Express](https://img.shields.io/badge/Express-Web%20Framework-black.svg)
+
+![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)
+![FastAPI](https://img.shields.io/badge/FastAPI-Backend-teal.svg)
+![LangChain](https://img.shields.io/badge/LangChain-RAG%20Framework-purple.svg)
+![ChromaDB](https://img.shields.io/badge/ChromaDB-Vector%20Database-red.svg)
+![HuggingFace](https://img.shields.io/badge/HuggingFace-Embeddings-yellow.svg)
+![BGE](https://img.shields.io/badge/BAAI%2Fbge--large--en--v1.5-Embeddings-orange.svg)
+![Ollama](https://img.shields.io/badge/Ollama-LLM%20Runtime-darkgreen.svg)
+
+
+# Ollama-RAG-Chat
 
 A web-based chat interface for [Ollama](https://ollama.ai/) with RAG (Retrieval-Augmented Generation) support. This project allows you to chat with local LLMs and query your own knowledge base using vector similarity search.
-
-![Architecture](docs/architecture.png)
 
 ## Features
 
@@ -172,20 +186,3 @@ Edit `frontend/public/index.html` to add more models to the dropdown:
     <option value="your-model:tag">Your Model</option>
 </select>
 ```
-
-## Tech Stack
-
-- **Frontend**: HTML, TailwindCSS, JavaScript, Marked.js
-- **Web Server**: Node.js, Express
-- **RAG Backend**: Python, FastAPI, LangChain
-- **Vector Database**: ChromaDB
-- **Embeddings**: HuggingFace (BAAI/bge-large-en-v1.5)
-- **LLM**: Ollama (any supported model)
-
-## License
-
-MIT License - feel free to use this project for any purpose.
-
-## Contributing
-
-Contributions are welcome! Please open an issue or submit a pull request.
