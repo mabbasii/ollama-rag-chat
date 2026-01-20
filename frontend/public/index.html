@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="dark">
+    <title>Ollama RAG Chat</title>
+    <link rel="icon" href="favicon.svg">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        base: {
+                            900: '#0b0f16',
+                            800: '#0f1623',
+                            700: '#111827'
+                        },
+                        accent: {
+                            DEFAULT: '#14b8a6',
+                            600: '#0d9488',
+                            400: '#2dd4bf'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.15); }
+
+        /* Message animations */
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .message-enter { animation: slideUp 0.3s ease-out; }
+
+        /* Loading dots animation */
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+        .loading-dot { animation: bounce 1.4s infinite ease-in-out; }
+        .loading-dot:nth-child(1) { animation-delay: -0.32s; }
+        .loading-dot:nth-child(2) { animation-delay: -0.16s; }
+
+        /* Markdown styling */
+        .markdown-content strong { font-weight: 600; color: #14b8a6; }
+        .markdown-content em { font-style: italic; color: rgba(255,255,255,0.9); }
+        .markdown-content h1, .markdown-content h2, .markdown-content h3 {
+            font-weight: 600; margin-top: 1em; margin-bottom: 0.5em; color: #14b8a6;
+        }
+        .markdown-content h1 { font-size: 1.5em; }
+        .markdown-content h2 { font-size: 1.3em; }
+        .markdown-content h3 { font-size: 1.1em; }
+        .markdown-content ul, .markdown-content ol { margin-left: 1.5em; margin-top: 0.5em; margin-bottom: 0.5em; }
+        .markdown-content li { margin-bottom: 0.25em; }
+        .markdown-content code {
+            background: rgba(255,255,255,0.1); padding: 0.2em 0.4em;
+            border-radius: 4px; font-family: 'Courier New', monospace; font-size: 0.9em;
+        }
+        .markdown-content pre {
+            background: rgba(255,255,255,0.05); padding: 1em;
+            border-radius: 8px; overflow-x: auto; margin: 0.5em 0;
+        }
+        .markdown-content pre code { background: none; padding: 0; }
+        .markdown-content p { margin-bottom: 0.75em; }
+        .markdown-content p:last-child { margin-bottom: 0; }
+        .markdown-content blockquote {
+            background: rgba(20, 184, 166, 0.08); border-left: 3px solid #14b8a6;
+            padding: 12px 16px; margin: 12px 0; border-radius: 0 8px 8px 0;
+            font-style: italic; color: rgba(255, 255, 255, 0.85);
+        }
+        .markdown-content hr { border: none; border-top: 1px solid rgba(20, 184, 166, 0.3); margin: 20px 0; }
+
+        /* Thinking section styles */
+        .thinking-section {
+            background: rgba(20, 184, 166, 0.05); border: 1px solid rgba(20, 184, 166, 0.2);
+            border-radius: 8px; padding: 12px;
+        }
+        .thinking-section summary { color: #14b8a6; font-weight: 500; list-style: none; user-select: none; }
+        .thinking-section summary::-webkit-details-marker { display: none; }
+        .thinking-section summary:hover { color: #2dd4bf; }
+        .thinking-content { color: rgba(255, 255, 255, 0.5); font-size: 0.875rem; }
+        .thinking-indicator {
+            background: rgba(20, 184, 166, 0.05); border: 1px solid rgba(20, 184, 166, 0.2);
+            border-radius: 8px; padding: 12px;
+        }
+        .thinking-dots .dot { animation: blink 1.4s infinite; }
+        .thinking-dots .dot:nth-child(3) { animation-delay: 0s; }
+        .thinking-dots .dot:nth-child(4) { animation-delay: 0.2s; }
+        .thinking-dots .dot:nth-child(5) { animation-delay: 0.4s; }
+        @keyframes blink { 0%, 20%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+
+        textarea { field-sizing: content; max-height: 200px; }
+    </style>
+</head>
+<body class="bg-base-900 text-white h-screen flex flex-col overflow-hidden">
+
+    <!-- Header -->
+    <header class="border-b border-white/5 bg-base-800/50 backdrop-blur-sm">
+        <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <svg class="w-6 h-6 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                </svg>
+                <h1 class="text-lg font-semibold">Ollama RAG Chat</h1>
+            </div>
+
+            <!-- Model Selector -->
+            <div class="flex items-center gap-2">
+                <label for="model-select" class="text-sm text-white/60">Model:</label>
+                <select id="model-select" class="bg-base-700 text-white text-sm rounded-lg px-3 py-1.5 border border-white/10 focus:border-accent focus:outline-none cursor-pointer">
+                    <!-- RAG model options -->
+                    <option value="rag-knowledge-base">Knowledge Base (RAG)</option>
+                    <option value="rag-documentation">Documentation (RAG)</option>
+                    <!-- Direct LLM options - customize based on your Ollama models -->
+                    <option value="llama3.1:8b">Llama 3.1 8B</option>
+                    <option value="mistral:7b">Mistral 7B</option>
+                    <option value="codellama:7b">Code Llama 7B</option>
+                </select>
+            </div>
+        </div>
+    </header>
+
+    <!-- Chat Container -->
+    <div id="chat-container" class="flex-1 overflow-y-auto">
+        <div class="max-w-3xl mx-auto px-4 py-8">
+            <!-- Welcome Screen -->
+            <div id="welcome-screen" class="flex flex-col items-center justify-center text-center py-20">
+                <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-accent/20 to-accent/5 flex items-center justify-center mb-6">
+                    <svg class="w-8 h-8 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-semibold mb-3">How can I help you today?</h2>
+                <p class="text-white/60 max-w-md">Start a conversation by typing a message below</p>
+                <div class="mt-8 px-4 py-2 bg-accent/10 border border-accent/20 rounded-lg text-sm text-white/70">
+                    Tip: Select a <span class="text-accent font-medium">RAG model</span> to query your knowledge base, or use a direct <span class="text-accent font-medium">Ollama model</span> for general chat
+                </div>
+            </div>
+
+            <!-- Messages will be inserted here -->
+            <div id="messages"></div>
+        </div>
+    </div>
+
+    <!-- Input Area -->
+    <div class="border-t border-white/5 bg-base-800/50 backdrop-blur-sm">
+        <div class="max-w-3xl mx-auto px-4 py-4">
+            <div class="relative bg-base-700 rounded-2xl border border-white/10 focus-within:border-accent transition-colors">
+                <textarea
+                    id="user-input"
+                    placeholder="Message AI..."
+                    rows="1"
+                    class="w-full bg-transparent text-white px-4 py-3 pr-12 resize-none focus:outline-none placeholder:text-white/40"
+                ></textarea>
+                <button
+                    id="send-button"
+                    class="absolute right-2 bottom-2 w-8 h-8 rounded-lg bg-accent hover:bg-accent-600 text-black flex items-center justify-center transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M12 5l7 7-7 7"/>
+                    </svg>
+                </button>
+            </div>
+            <p class="text-xs text-white/40 text-center mt-2">AI can make mistakes. Consider checking important information.</p>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
