@@ -18,6 +18,8 @@
 
 A web-based chat interface for [Ollama](https://ollama.ai/) with RAG (Retrieval-Augmented Generation) support. This project allows you to chat with local LLMs and query your own knowledge base using vector similarity search.
 
+A demo of the frontend can be found on my [Website](https://mabbasii.com/chatbot/) !
+
 ## Features
 
 - **Web UI** - Clean, modern chat interface with streaming responses
